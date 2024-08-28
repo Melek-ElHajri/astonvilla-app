@@ -21,10 +21,11 @@ pipeline {
                     withSonarQubeEnv('sonar') { 
                         dir('r') { // Répertoire du dépôt cloné
                             sh "${scannerHome}/bin/sonar-scanner \
-                                -Dsonar.projectKey=astonvilla \
+                                -Dsonar.projectKey=astonvilla-app \
                                 -Dsonar.sources=. \
                                 -Dsonar.host.url=${env.SONARQUBE_URL} \
-                                -Dsonar.login=squ_162d3afa839e72a3e742d620c41b9cfd0498a4df
+                                -Dsonar.login=squ_162d3afa839e72a3e742d620c41b9cfd0498a4df" 
+                        }
                     }
                 }
             }
