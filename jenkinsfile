@@ -6,27 +6,56 @@ pipeline {
     stages {
         stage ("Clean up"){
             steps {
-                sh 'rm -rf /root/.jenkins/workspace/astonvilla/*'
-                sh 'ls'
+                 deleteDir()
             }
         }
-        stage ("Clone repo"){
+        stage('Checkout') {
             steps {
-                sh "git clone https://github.com/Melek-ElHajri/astonvilla-app.git"
+              git url: 'https://github.com/Melek-ElHajri/astonvilla-app.git'
+            }
+        }
+        stage('Run Sonar Server') {
+            steps {
+              sh "docker-compose -f sonar-docker-compose.yaml up -d"
             }
         }
         stage ("Generate docker image") {
             steps {
-                 dir("astonvilla-app"){
-                    sh "docker build -t m2l2k/astonvilla:1.1.${env.BUILD_NUMBER} ."
-                }                
+                sh "docker build -t m2l2k/astonvilla:1.1.${env.BUILD_NUMBER} ."
             }
         }
         stage ("push docker image") {
             steps {
-                 dir("astonvilla-app"){
-                    sh "docker push m2l2k/astonvilla:1.1.${env.BUILD_NUMBER}"
-                }                
+              sh "docker push m2l2k/astonvilla:1.1.${env.BUILD_NUMBER}"
+            }
+        }
+        stage ("clone gitops repo") {
+            steps {
+              sh "git clone https://github.com/Melek-ElHajri/argocd.git"
+            }
+        }
+        stage ("change image tag") {
+            steps {
+             dir('argocd/astonvilla-app'){
+                script{
+                  def deployment = readFile('astonvilla-deployment.yaml')
+                  def updatedDeployment = deployment.replaceAll(/astonvilla-app:\s*[\w.-]+/, "astonvilla-app:1.1.${env.BUILD_NUMBER}")
+                  writeFile file: 'astonvilla-deployment.yaml', text: updatedDeployment
+                }
+              }
+            }
+        }
+         stage ("commit changes") {
+            steps {
+            dir('argocd/astonvilla-app'){
+                script{
+                      sh 'git config user.email "jenkins@agent.com"'
+                      sh 'git config user.name "jenkins-admin"'
+                      sh 'git add astonvilla-deployment.yaml'
+                      sh 'git commit -m "updated image tag"'
+                      sh 'git push https://Melek-ElHajri:${GITHUB_TOKEN}@github.com/Melek-ElHajri/argocd.git master'
+                }
+              }
             }
         }
     }
