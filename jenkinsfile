@@ -2,6 +2,8 @@ pipeline {
     agent any 
     environment {
         GITHUB_TOKEN = credentials('github-token') // Retrieve the Git token from Jenkins credentials
+        SONAR_TOKEN = credentials('sonar_token')
+        SONAR_HOST_URL = 'http://localhost:9000'  // URL of SonarQube running in Docker container
     }
     stages {
         stage ("Clean up"){
