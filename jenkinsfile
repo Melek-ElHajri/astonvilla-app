@@ -2,7 +2,6 @@ pipeline {
     agent any 
     environment {
         GITHUB_TOKEN = credentials('github-token') // Retrieve the Git token from Jenkins credentials
-        SONARQUBE_TOKEN = credentials('sonar_token') // Retrieve the Git token from Jenkins credentials
     }
     stages {
         stage ("Clean up"){
