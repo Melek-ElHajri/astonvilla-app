@@ -1,47 +1,58 @@
 pipeline {
-    agent any
-
-    tools {
-        // Define the SonarQube Scanner tool
-        sonar 'SonarQube Scanner'  // Use 'sonar' instead of 'sonarQubeScanner'
-    }
-
+    agent any 
     environment {
-        // Define SonarQube server details
-        SONAR_HOST_URL = 'http://<your-docker-host>:9000'
-        SONAR_AUTH_TOKEN = credentials('sonar-token-id')  // Make sure to add SonarQube token in Jenkins credentials
+        GITHUB_TOKEN = credentials('github-token') // Retrieve the Git token from Jenkins credentials
     }
-
     stages {
-        stage('Build') {
+        stage ("Clean up"){
             steps {
-                // Example build step
-                sh 'mvn clean package'
+                 deleteDir()
             }
         }
-
-        stage('SonarQube Analysis') {
+        stage ("Clone repo"){
             steps {
-                script {
-                    // Run SonarQube analysis
-                    withSonarQubeEnv('SonarQube') {
-                        sh 'mvn sonar:sonar -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_AUTH_TOKEN}'
-                    }
-                }
+                sh "git clone https://github.com/Melek-ElHajri/astonvilla-app.git"
             }
         }
-        
-        stage('Quality Gate') {
+        stage ("Generate docker image") {
             steps {
-                // Wait for SonarQube analysis to complete and check the quality gate status
-                timeout(time: 1, unit: 'HOURS') {
-                    script {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                        }
-                    }
+                 dir("astonvilla-app"){
+                    sh "docker build -t m2l2k/astonvilla:1.1.${env.BUILD_NUMBER} ."
+                }                
+            }
+        }
+        stage ("push docker image") {
+            steps {
+              sh "docker push m2l2k/astonvilla:1.1.${env.BUILD_NUMBER}"
+            }
+        }
+        stage ("clone gitops repo") {
+            steps {
+              sh "git clone https://github.com/Melek-ElHajri/argocd.git"
+            }
+        }
+        stage ("change image tag") {
+            steps {
+             dir('argocd/astonvilla-app'){
+                script{
+                  def deployment = readFile('astonvilla-deployment.yaml')
+                  def updatedDeployment = deployment.replaceAll(/astonvilla:\s*[\w.-]+/, "astonvilla:1.1.${env.BUILD_NUMBER}")
+                  writeFile file: 'astonvilla-deployment.yaml', text: updatedDeployment
                 }
+              }
+            }
+        }
+         stage ("commit changes") {
+            steps {
+            dir('argocd/astonvilla-app'){
+                script{
+                      sh 'git config user.email "jenkins@agent.com"'
+                      sh 'git config user.name "jenkins-admin"'
+                      sh 'git add astonvilla-deployment.yaml'
+                      sh 'git commit -m "updated image tag"'
+                      sh 'git push https://Melek-ElHajri:${GITHUB_TOKEN}@github.com/Melek-ElHajri/argocd.git master'
+                }
+              }
             }
         }
     }
