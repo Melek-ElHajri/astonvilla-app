@@ -3,13 +3,13 @@ pipeline {
 
     tools {
         // Define the SonarQube Scanner tool
-        sonarQubeScanner 'SonarQube Scanner'
+        sonar 'SonarQube Scanner'  // Use 'sonar' instead of 'sonarQubeScanner'
     }
 
     environment {
         // Define SonarQube server details
         SONAR_HOST_URL = 'http://<your-docker-host>:9000'
-        SONAR_AUTH_TOKEN = credentials('sonar_token')  // Make sure to add SonarQube token in Jenkins credentials
+        SONAR_AUTH_TOKEN = credentials('sonar-token-id')  // Make sure to add SonarQube token in Jenkins credentials
     }
 
     stages {
@@ -35,7 +35,12 @@ pipeline {
             steps {
                 // Wait for SonarQube analysis to complete and check the quality gate status
                 timeout(time: 1, unit: 'HOURS') {
-                    waitForQualityGate()
+                    script {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        }
+                    }
                 }
             }
         }
