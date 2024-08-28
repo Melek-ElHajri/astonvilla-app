@@ -19,14 +19,12 @@ pipeline {
         stage("SonarQube Analysis") {
             steps {
                 script {
-                    def scannerHome = tool 'SonarQube Scanner' 
-                    withSonarQubeEnv('sonar') { 
-                        dir('r') { // Répertoire du dépôt cloné
-                            sh "${scannerHome}/bin/sonar-scanner \
-                                -Dsonar.projectKey=astonvilla \
-                                -Dsonar.sources=. \
-                                -Dsonar.host.url=${env.SONARQUBE_URL} \
-                                -Dsonar.login=${SONAR_TOKEN}" 
+                    docker.image('sonarsource/sonar-scanner-cli:latest').inside { 
+                        sh "sonar-scanner " + 
+                           "-Dsonar.projectKey=astonvilla " +
+                           "-Dsonar.sources=. " +
+                           "-Dsonar.host.url=${env.SONAR_HOST_URL} " +
+                           "-Dsonar.login=${SONAR_TOKEN}" 
                         }
                     }
                 }
