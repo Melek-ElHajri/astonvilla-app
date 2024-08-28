@@ -15,7 +15,7 @@ pipeline {
             }
         }
         stage('Run Sonar Server') {
-            dir('astonvilla-app'){
+            workdir('astonvilla-app'){
             steps {
               sh "docker-compose -f sonar-docker-compose.yaml up -d"
             }
