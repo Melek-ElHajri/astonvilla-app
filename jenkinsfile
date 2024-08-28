@@ -53,7 +53,7 @@ pipeline {
                       sh 'git config user.name "jenkins-admin"'
                       sh 'git add astonvilla-deployment.yaml'
                       sh 'git commit -m "updated image tag"'
-                      sh 'git push https://Raouf-Rhimi:${GITHUB_TOKEN}@github.com/Raouf-Rhimi/argocd.git master'
+                      sh 'git push https://Melek-ElHajri:${GITHUB_TOKEN}@github.com/Melek-ElHajri/argocd.git master'
                 }
               }
             }
