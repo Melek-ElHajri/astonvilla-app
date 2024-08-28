@@ -20,7 +20,7 @@ pipeline {
                     def scannerHome = tool 'SonarQube Scanner'  // Ensure 'SonarQube Scanner' is configured in Jenkins
                     withSonarQubeEnv('sonar') {  // Ensure 'sonar' matches the SonarQube server configuration in Jenkins
                         dir('r') {  // Directory of the cloned repository
-                            withCredentials([string(credentialsId: 'astonvilla', variable: 'SONARQUBE_TOKEN')]) {
+                            withCredentials([string(credentialsId: 'sonar_token', variable: 'SONARQUBE_TOKEN')]) {
                                 sh """
                                     ${scannerHome}/bin/sonar-scanner \
                                     -Dsonar.projectKey=astonvilla-app \
