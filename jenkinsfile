@@ -18,6 +18,7 @@ pipeline {
             
             steps {
               dir('astonvilla-app'){
+              sh "docker-compose -f sonar-docker-compose.yaml down"
               sh "docker-compose -f sonar-docker-compose.yaml up -d"
             }
       }
