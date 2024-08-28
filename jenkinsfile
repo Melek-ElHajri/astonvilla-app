@@ -2,6 +2,7 @@ pipeline {
     agent any 
     environment {
         GITHUB_TOKEN = credentials('github-token') // Retrieve the Git token from Jenkins credentials
+        SONAR_TOKEN = credentials('sonar_token')
     }
     stages {
         stage ("Clean up"){
@@ -21,10 +22,10 @@ pipeline {
                     withSonarQubeEnv('sonar') { 
                         dir('r') { // Répertoire du dépôt cloné
                             sh "${scannerHome}/bin/sonar-scanner \
-                                -Dsonar.projectKey=astonvilla-app \
+                                -Dsonar.projectKey=astonvilla \
                                 -Dsonar.sources=. \
                                 -Dsonar.host.url=${env.SONARQUBE_URL} \
-                                -Dsonar.login=squ_c51492f4594f426ab2552c7f8168472c26f3e7fb" 
+                                -Dsonar.login=${SONAR_TOKEN}" 
                         }
                     }
                 }
