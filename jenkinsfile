@@ -9,9 +9,9 @@ pipeline {
                  deleteDir()
             }
         }
-        stage('Checkout') {
+        stage ("Clone repo"){
             steps {
-              git url: 'https://github.com/Raouf-Rhimi/astonvilla-app.git'
+                sh "git clone https://github.com/Melek-ElHajri/astonvilla-app.git"
             }
         }
         stage ("Generate docker image") {
