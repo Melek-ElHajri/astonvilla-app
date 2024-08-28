@@ -1,9 +1,13 @@
 pipeline {
     agent any 
+    environment {
+        GITHUB_TOKEN = credentials('github-token') // Retrieve the Git token from Jenkins credentials
+    }
     stages {
         stage ("Clean up"){
             steps {
-                 deleteDir()
+                sh 'rm -rf /root/.jenkins/workspace/astonvilla/*'
+                sh 'ls'
             }
         }
         stage ("Clone repo"){
@@ -11,27 +15,6 @@ pipeline {
                 sh "git clone https://github.com/Melek-ElHajri/astonvilla-app.git"
             }
         }
-        stage("SonarQube Analysis") {
-            steps {
-                script {
-                    def scannerHome = tool 'SonarQube Scanner'  // Ensure 'SonarQube Scanner' is configured in Jenkins
-                    withSonarQubeEnv('sonar') {  // Ensure 'sonar' matches the SonarQube server configuration in Jenkins
-                        dir('r') {  // Directory of the cloned repository
-                            withCredentials([string(credentialsId: 'sonar_token', variable: 'SONARQUBE_TOKEN')]) {
-                                sh """
-                                    ${scannerHome}/bin/sonar-scanner \
-                                    -Dsonar.projectKey=astonvilla-app \
-                                    -Dsonar.sources=. \
-                                    -Dsonar.host.url=${env.SONARQUBE_URL} \
-                                    -Dsonar.login=${SONARQUBE_TOKEN}
-                                """
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         stage ("Generate docker image") {
             steps {
                  dir("astonvilla-app"){
