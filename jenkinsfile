@@ -22,6 +22,19 @@ pipeline {
             }
       }
         }
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    docker.image('sonarsource/sonar-scanner-cli:latest').inside {
+                        sh "sonar-scanner " +
+                           "-Dsonar.projectKey=astonvilla" +
+                           "-Dsonar.sources=. " +
+                           "-Dsonar.host.url=${env.SONAR_HOST_URL} " +
+                           "-Dsonar.login=${SONAR_TOKEN}"
+                    }
+                }
+            }
+        }
         stage ("Generate docker image") {
             steps {
                  dir("astonvilla-app"){
