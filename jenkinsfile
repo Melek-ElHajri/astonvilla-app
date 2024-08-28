@@ -2,8 +2,6 @@ pipeline {
     agent any 
     environment {
         GITHUB_TOKEN = credentials('github-token') // Retrieve the Git token from Jenkins credentials
-    }
-    environment {
         sonar = credentials('astonvilla') // Retrieve the Git token from Jenkins credentials
     }
     stages {
