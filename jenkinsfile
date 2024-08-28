@@ -15,6 +15,11 @@ pipeline {
                 sh "git clone https://github.com/Melek-ElHajri/astonvilla-app.git"
             }
         }
+        stage('Run Sonar Server') {
+            steps {
+              sh "docker-compose -f sonar-docker-compose.yaml up -d"
+            }
+        }
         stage ("Generate docker image") {
             steps {
                  dir("astonvilla-app"){
