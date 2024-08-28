@@ -2,77 +2,57 @@ pipeline {
     agent any 
     environment {
         GITHUB_TOKEN = credentials('github-token') // Retrieve the Git token from Jenkins credentials
-        SONAR_TOKEN = credentials('sonar_token')
-        SONAR_HOST_URL = 'http://localhost:9000'
     }
     stages {
-        stage('Clean up') {
+        stage ("Clean up"){
             steps {
-                deleteDir()  // Clean the workspace
+                 deleteDir()
             }
         }
-        stage('Clone repo') {
+        stage ("Clone repo"){
             steps {
-                git url: 'https://github.com/Melek-ElHajri/astonvilla-app.git', credentialsId: 'github-token'
+                sh "git clone https://github.com/Melek-ElHajri/astonvilla-app.git"
             }
         }
-        stage('Run Sonar Server') {
+        stage ("Generate docker image") {
             steps {
-                sh 'docker-compose -f sonar-docker-compose.yaml up -d'
-            }
-        }
-        stage('SonarQube Analysis') {
-            steps {
-                script {
-                    docker.image('sonarsource/sonar-scanner-cli:latest').inside {
-                        sh "sonar-scanner " +
-                           "-Dsonar.projectKey=astonvilla " +
-                           "-Dsonar.sources=. " +
-                           "-Dsonar.host.url=${env.SONAR_HOST_URL} " +
-                           "-Dsonar.login=${SONAR_TOKEN}"
-                    }
-                }
-            }
-        }
-        stage('Generate Docker Image') {
-            steps {
-                dir('astonvilla-app') {
+                 dir("astonvilla-app"){
                     sh "docker build -t m2l2k/astonvilla:1.1.${env.BUILD_NUMBER} ."
+                }                
+            }
+        }
+        stage ("push docker image") {
+            steps {
+              sh "docker push m2l2k/astonvilla:1.1.${env.BUILD_NUMBER}"
+            }
+        }
+        stage ("clone gitops repo") {
+            steps {
+              sh "git clone https://github.com/Melek-ElHajri/argocd.git"
+            }
+        }
+        stage ("change image tag") {
+            steps {
+             dir('argocd/astonvilla-app'){
+                script{
+                  def deployment = readFile('astonvilla-deployment.yaml')
+                  def updatedDeployment = deployment.replaceAll(/astonvilla:\s*[\w.-]+/, "astonvilla:1.1.${env.BUILD_NUMBER}")
+                  writeFile file: 'astonvilla-deployment.yaml', text: updatedDeployment
                 }
+              }
             }
         }
-        stage('Push Docker Image') {
+         stage ("commit changes") {
             steps {
-                sh "docker push m2l2k/astonvilla:1.1.${env.BUILD_NUMBER}"
-            }
-        }
-        stage('Clone GitOps Repo') {
-            steps {
-                git url: 'https://github.com/Melek-ElHajri/argocd.git', credentialsId: 'github-token'
-            }
-        }
-        stage('Change Image Tag') {
-            steps {
-                dir('argocd/astonvilla-app') {
-                    script {
-                        def deployment = readFile('astonvilla-deployment.yaml')
-                        def updatedDeployment = deployment.replaceAll(/astonvilla:\s*[\w.-]+/, "astonvilla:1.1.${env.BUILD_NUMBER}")
-                        writeFile file: 'astonvilla-deployment.yaml', text: updatedDeployment
-                    }
+            dir('argocd/astonvilla-app'){
+                script{
+                      sh 'git config user.email "jenkins@agent.com"'
+                      sh 'git config user.name "jenkins-admin"'
+                      sh 'git add astonvilla-deployment.yaml'
+                      sh 'git commit -m "updated image tag"'
+                      sh 'git push https://Melek-ElHajri:${GITHUB_TOKEN}@github.com/Melek-ElHajri/argocd.git master'
                 }
-            }
-        }
-        stage('Commit Changes') {
-            steps {
-                dir('argocd/astonvilla-app') {
-                    script {
-                        sh 'git config user.email "jenkins@agent.com"'
-                        sh 'git config user.name "jenkins-admin"'
-                        sh 'git add astonvilla-deployment.yaml'
-                        sh 'git commit -m "Updated image tag to 1.1.${env.BUILD_NUMBER}"'
-                        sh 'git push https://Melek-ElHajri:${GITHUB_TOKEN}@github.com/Melek-ElHajri/argocd.git master'
-                    }
-                }
+              }
             }
         }
     }
