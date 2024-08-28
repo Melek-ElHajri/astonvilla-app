@@ -3,6 +3,7 @@ pipeline {
     environment {
         GITHUB_TOKEN = credentials('github-token') // Retrieve the Git token from Jenkins credentials
         SONAR_TOKEN = credentials('sonar_token')
+        SONAR_HOST_URL = 'http://localhost:9000'
     }
     stages {
         stage ("Clean up"){
